@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Car Damage AI</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f8;
+        margin: 0;
+        padding: 40px;
+        color: #111827;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: auto;
+    }
+
+    /* ============================
+       HEADER
+    ============================ */
+
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .header h1 {
+        font-size: 42px;
+        margin-bottom: 10px;
+    }
+
+    .header p {
+        font-size: 18px;
+        color: #6b7280;
+    }
+
+    /* ============================
+       MAIN CARD
+    ============================ */
+
+    .card {
+        background: white;
+        padding: 35px;
+        border-radius: 18px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ============================
+       UPLOAD
+    ============================ */
+
+    .upload-box {
+        border: 2px dashed #9ca3af;
+        border-radius: 14px;
+        padding: 35px;
+        text-align: center;
+    }
+
+    input[type="file"] {
+        margin: 20px 0;
+        font-size: 16px;
+    }
+
+    button {
+        display: block;
+        margin: auto;
+        padding: 14px 30px;
+        background: #111827;
+        color: white;
+        border: none;
+        border-radius: 9px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #374151;
+    }
+
+    /* ============================
+       ERROR
+    ============================ */
+
+    .error {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    /* ============================
+       RESULTS
+    ============================ */
+
+    .results {
+        margin-top: 40px;
+    }
+
+    .results h2 {
+        margin-bottom: 20px;
+    }
+
+    /* ============================
+       IMAGES
+    ============================ */
+
+    .images {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+
+    .image-card {
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    .image-card h3 {
+        margin-top: 0;
+    }
+
+    .image-card img {
+        width: 100%;
+        border-radius: 10px;
+        display: block;
+    }
+
+    /* ============================
+       DETECTIONS
+    ============================ */
+
+    .detection-list {
+        margin-top: 30px;
+    }
+
+    .detection {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        background: #f3f4f6;
+
+        padding: 18px;
+        margin-bottom: 10px;
+
+        border-radius: 10px;
+    }
+
+    .damage-name {
+        font-weight: bold;
+        font-size: 17px;
+    }
+
+    .confidence {
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .no-detection {
+        background: #f3f4f6;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    /* ============================
+       REPAIR COST
+    ============================ */
+
+    .cost-card {
+        margin-top: 30px;
+        padding: 25px;
+        background: #f3f4f6;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .cost-card h3 {
+        margin-top: 0;
+    }
+
+    .cost {
+        font-size: 32px;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    /* ============================
+       RESPONSIVE
+    ============================ */
+
+    @media (max-width: 700px) {
+        body {
+            padding: 15px;
+        }
+
+        .images {
+            grid-template-columns: 1fr;
+        }
+
+        .header h1 {
+            font-size: 32px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- ============================
+         HEADER
+    ============================ -->
+
+    <div class="header">
+
+        <h1>🚗 Car Damage AI</h1>
+
+        <p>
+            Upload a vehicle image to detect visible damage. Cost values are illustrative prototype estimates.
+        </p>
+
+    </div>
+
+
+    <!-- ============================
+         MAIN CARD
+    ============================ -->
+
+    <div class="card">
+
+        <!-- ERROR MESSAGE -->
+
+        {% if error %}
+
+        <div class="error">
+            {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        <!-- ============================
+             UPLOAD FORM
+        ============================ -->
+
+        <form
+            action="/analyze"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            <div class="upload-box">
+
+                <h2>
+                    Upload Vehicle Image
+                </h2>
+
+                <p>
+                    JPG, JPEG, PNG or WEBP
+                </p>
+
+                <input
+                    type="file"
+                    name="image"
+                    accept="image/*"
+                    required
+                >
+
+                <button type="submit">
+                    🔍 Analyze Damage
+                </button>
+
+            </div>
+
+        </form>
+
+
+        <!-- ============================
+             RESULTS
+        ============================ -->
+
+        {% if original_image and result_image %}
+
+        <div class="results">
+
+            <h2>
+                🔎 Analysis Results
+            </h2>
+
+
+            <!-- ============================
+                 IMAGE RESULTS
+            ============================ -->
+
+            <div class="images">
+
+                <!-- ORIGINAL IMAGE -->
+
+                <div class="image-card">
+
+                    <h3>
+                        Original Image
+                    </h3>
+
+                    <img
+                        src="{{ original_image }}"
+                        alt="Original vehicle image"
+                    >
+
+                </div>
+
+
+                <!-- AI RESULT -->
+
+                <div class="image-card">
+
+                    <h3>
+                        AI Detection
+                    </h3>
+
+                    <img
+                        src="{{ result_image }}"
+                        alt="AI detected vehicle damage"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- ============================
+                 DETECTION LIST
+            ============================ -->
+
+            <div class="detection-list">
+
+                <h2>
+                    Detected Damage
+                </h2>
+
+
+                {% if detections %}
+
+                    {% for detection in detections %}
+
+                    <div class="detection">
+
+                        <span class="damage-name">
+                            {{ detection.class }}
+                        </span>
+
+                        <span class="confidence">
+                            {{ detection.confidence }}%
+                        </span>
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="no-detection">
+
+                        <strong>
+                            No damage detected.
+                        </strong>
+
+                        <p>
+                            Try another vehicle image.
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- ============================
+                 ESTIMATED REPAIR COST
+            ============================ -->
+
+            <div class="cost-card">
+
+                <h3>
+                    💰 Prototype Repair Cost Estimate
+                </h3>
+
+                <div class="cost">
+                    ${{ total_cost }}
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+</body>
+
+</html>
